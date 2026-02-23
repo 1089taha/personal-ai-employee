@@ -5,9 +5,10 @@ build/
 dist/
 wheels/
 *.egg-info
-
+*.pyc
 # Virtual environments
 .venv
-
+node_modules/
 # Secrets
 .env
+secrets/

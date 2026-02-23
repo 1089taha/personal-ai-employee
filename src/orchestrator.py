@@ -9,10 +9,13 @@ import logging
 import os
 import re
 import shutil
+import subprocess
 import time
+import webbrowser
 from datetime import datetime, timezone
 from pathlib import Path
 
+import requests
 from dotenv import load_dotenv
 from watchdog.events import FileCreatedEvent, FileSystemEventHandler
 from watchdog.observers import Observer
@@ -29,6 +32,12 @@ DONE = VAULT_PATH / "Done"
 LOGS_DIR = VAULT_PATH / "Logs"
 DASHBOARD = VAULT_PATH / "Dashboard.md"
 
+LINKEDIN_TOKEN_PATH = Path("secrets/linkedin_token.json")
+LINKEDIN_UGC_URL = "https://api.linkedin.com/v2/ugcPosts"
+
+# Populated once at startup by _load_linkedin_token()
+_linkedin_token: dict | None = None
+
 DRY_RUN = os.environ.get("DRY_RUN", "true").lower() != "false"
 
 logging.basicConfig(
@@ -44,7 +53,12 @@ log = logging.getLogger("orchestrator")
 # ---------------------------------------------------------------------------
 
 def _parse_frontmatter(text: str) -> dict[str, str]:
-    """Extract key: value pairs from YAML front-matter between --- delimiters."""
+    """Extract key: value pairs from YAML front-matter between --- delimiters.
+
+    Strips a leading UTF-8 BOM (\\ufeff) before matching — Obsidian saves files
+    with BOM encoding (utf-8-sig), which causes the ^--- anchor to miss.
+    """
+    text = text.lstrip("\ufeff")
     match = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
     if not match:
         return {}
@@ -54,6 +68,136 @@ def _parse_frontmatter(text: str) -> dict[str, str]:
             key, _, val = line.partition(":")
             result[key.strip()] = val.strip().strip('"')
     return result
+
+
+# ---------------------------------------------------------------------------
+# LinkedIn post helpers
+# ---------------------------------------------------------------------------
+
+def _extract_linkedin_post_text(content: str) -> str:
+    """
+    Return only the raw post text between the "## Drafted LinkedIn Post" and
+    "## Source" headings — no YAML front-matter, no markdown headers.
+    """
+    match = re.search(
+        r"##\s+Drafted LinkedIn Post\s*\n(.*?)(?=\n##\s+Source|\Z)",
+        content,
+        re.DOTALL,
+    )
+    if not match:
+        return ""
+    return match.group(1).strip()
+
+
+def _load_linkedin_token() -> None:
+    """Load secrets/linkedin_token.json once at startup into _linkedin_token."""
+    global _linkedin_token
+    if not LINKEDIN_TOKEN_PATH.exists():
+        log.warning(
+            "secrets/linkedin_token.json not found — LinkedIn posts will fall back to "
+            "clipboard. Run: uv run python src/linkedin_auth_setup.py"
+        )
+        return
+    try:
+        _linkedin_token = json.loads(LINKEDIN_TOKEN_PATH.read_text(encoding="utf-8"))
+        log.info(
+            "LinkedIn token loaded (person_id=%s)", _linkedin_token.get("person_id", "?")
+        )
+    except (json.JSONDecodeError, OSError) as exc:
+        log.warning("Failed to load LinkedIn token: %s — falling back to clipboard.", exc)
+
+
+def _clipboard_fallback(post_text: str) -> None:
+    """Copy post text to clipboard and open LinkedIn feed."""
+    subprocess.run(
+        ["powershell", "-command", "Set-Clipboard -Value $input"],
+        input=post_text,
+        text=True,
+        check=True,
+    )
+    webbrowser.open("https://www.linkedin.com/feed/")
+    banner = (
+        "\n"
+        "  ╔══════════════════════════════════════╗\n"
+        "  ║  LinkedIn post copied to clipboard!  ║\n"
+        "  ║  Browser opened — paste and post!    ║\n"
+        "  ╚══════════════════════════════════════╝\n"
+    )
+    log.info(
+        "[LIVE] LinkedIn post copied to clipboard and browser opened"
+        " — paste with Ctrl+V and click Post%s",
+        banner,
+    )
+
+
+def _handle_linkedin_post(content: str) -> None:
+    """Post to LinkedIn via API; fall back to clipboard if unavailable."""
+    post_text = _extract_linkedin_post_text(content)
+    if not post_text:
+        log.warning("Could not extract LinkedIn post text from file — skipping.")
+        return
+
+    if _linkedin_token is None:
+        log.warning("No LinkedIn token available — using clipboard fallback.")
+        _clipboard_fallback(post_text)
+        return
+
+    access_token = _linkedin_token.get("access_token", "")
+    person_id = _linkedin_token.get("person_id", "")
+
+    body = {
+        "author": f"urn:li:person:{person_id}",
+        "lifecycleState": "PUBLISHED",
+        "specificContent": {
+            "com.linkedin.ugc.ShareContent": {
+                "shareCommentary": {"text": post_text},
+                "shareMediaCategory": "NONE",
+            }
+        },
+        "visibility": {
+            "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
+        },
+    }
+
+    try:
+        response = requests.post(
+            LINKEDIN_UGC_URL,
+            json=body,
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+                "X-Restli-Protocol-Version": "2.0.0",
+            },
+            timeout=30,
+        )
+    except requests.RequestException as exc:
+        log.error("LinkedIn API request failed: %s — falling back to clipboard.", exc)
+        _clipboard_fallback(post_text)
+        return
+
+    if response.status_code == 201:
+        post_id = (
+            response.json().get("id")
+            or response.headers.get("X-RestLi-Id", "unknown")
+        )
+        banner = (
+            "\n"
+            "  ╔══════════════════════════════════════╗\n"
+            "  ║  LinkedIn post published via API!    ║\n"
+            "  ╚══════════════════════════════════════╝\n"
+        )
+        log.info(
+            "[LIVE] LinkedIn post published successfully! Post ID: %s%s",
+            post_id,
+            banner,
+        )
+    else:
+        log.error(
+            "LinkedIn API returned %s: %s — falling back to clipboard.",
+            response.status_code,
+            response.text,
+        )
+        _clipboard_fallback(post_text)
 
 
 # ---------------------------------------------------------------------------
@@ -203,11 +347,32 @@ class ApprovalHandler(FileSystemEventHandler):
             action = meta.get("action", "unknown")
             topic = meta.get("topic", src.name)
 
-            # Log intent based on mode
-            if DRY_RUN:
-                log.info("[DRY RUN] Would execute: %s — %s", action, topic)
+            log.debug("Parsed front-matter from %s: %s", src.name, meta)
+            if not meta:
+                log.warning(
+                    "Front-matter parse failed for %s — "
+                    "file may have unexpected encoding or missing --- delimiters",
+                    src.name,
+                )
+
+            # --- Dispatch by action type ---
+            if action == "linkedin_post":
+                if DRY_RUN:
+                    post_text = _extract_linkedin_post_text(content)
+                    log.info(
+                        "[DRY RUN] Would post to LinkedIn API — %s\n%s",
+                        topic,
+                        post_text or "(could not extract post text)",
+                    )
+                else:
+                    log.info("Executing: %s — %s", action, topic)
+                    _handle_linkedin_post(content)
             else:
-                log.info("Executing: %s — %s", action, topic)
+                # send_gmail, send_whatsapp, etc. — MCP servers will be added later
+                if DRY_RUN:
+                    log.info("[DRY RUN] Would execute: %s — %s", action, topic)
+                else:
+                    log.info("Executing: %s — %s (no handler yet)", action, topic)
 
             now = datetime.now(timezone.utc)
 
@@ -247,6 +412,8 @@ def main() -> None:
     APPROVED.mkdir(parents=True, exist_ok=True)
     DONE.mkdir(parents=True, exist_ok=True)
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
+    _load_linkedin_token()
 
     mode = "DRY RUN" if DRY_RUN else "LIVE"
     log.info("Orchestrator running in %s mode — watching /Approved/", mode)

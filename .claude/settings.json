@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(D:\\obsidian_vault\\**)",
+      "Edit(D:\\obsidian_vault\\**)",
+      "Write(D:\\obsidian_vault\\**)",
+      "Bash(*)"
+    ]
+  }
+}
