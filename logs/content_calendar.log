@@ -1,0 +1,9 @@
+2026-03-14T02:45:31: 2026-03-14 02:45:31  [INFO]  [ContentCalendar] Generating weekly content calendar...
+2026-03-14T02:45:31: 2026-03-14 02:45:31  [INFO]  Project dir : D:\ai-employee-project
+2026-03-14T02:45:31: 2026-03-14 02:45:31  [INFO]  Vault path  : D:\obsidian_vault
+2026-03-14T02:45:31: 2026-03-14 02:45:31  [INFO]  Claude executable : C:\Users\tahaa\AppData\Roaming\npm\claude.CMD
+2026-03-14T02:45:33: 2026-03-14 02:45:33  [INFO]  Claude Code produced no stdout output
+2026-03-14T02:45:33: 2026-03-14 02:45:33  [ERROR]  [ContentCalendar] ERROR � Claude Code exited with code 1
+2026-03-14T02:45:33: stderr: Error: Claude Code cannot be launched inside another Claude Code session.
+2026-03-14T02:45:33: Nested sessions share runtime resources and will crash all active sessions.
+2026-03-14T02:45:33: To bypass this check, unset the CLAUDECODE environment variable.

@@ -29,6 +29,8 @@ DONE_ORIGINALS = VAULT_PATH / "Done" / "originals"
 
 ALLOWED_SUFFIXES = {".md", ".txt"}
 
+FINANCE_PREFIXES = ("finance_", "expenses_", "budget_")
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s  [%(levelname)s]  %(message)s",
@@ -41,18 +43,41 @@ log = logging.getLogger("file_drop_watcher")
 # Action file builder
 # ---------------------------------------------------------------------------
 
-def _build_action_file(original_path: Path) -> tuple[str, str]:
-    """Return (filename, content) for the new action file."""
+def _build_action_file(original_path: Path) -> tuple[str, str, bool]:
+    """Return (filename, content, is_finance) for the new action file."""
     now = datetime.now(timezone.utc)
     timestamp_iso = now.strftime("%Y-%m-%dT%H:%M:%SZ")
     timestamp_short = now.strftime("%Y%m%d_%H%M")
 
     stem = original_path.stem
-    action_filename = f"DROP_{stem}_{timestamp_short}.md"
-
     raw_content = original_path.read_text(encoding="utf-8")
 
-    content = f"""---
+    # --- Finance detection (check BEFORE building the action file) -----------
+    is_finance = stem.lower().startswith(FINANCE_PREFIXES)
+
+    if is_finance:
+        action_filename = f"FINANCE_{stem}_{timestamp_short}.md"
+        content = f"""---
+type: finance_drop
+source: file_drop
+original_file: {original_path.name}
+created: {timestamp_iso}
+status: pending
+---
+
+## Raw Finance Data
+
+{raw_content}
+
+## Instructions for Claude
+
+Read the raw finance data above. Use the analyze_finances skill at .claude/skills/analyze_finances.md to process it.
+The vault is at the path in CLAUDE.md.
+Save the finance briefing to /Pending_Approval/ and wait for approval.
+"""
+    else:
+        action_filename = f"DROP_{stem}_{timestamp_short}.md"
+        content = f"""---
 type: thought_drop
 source: file_drop
 original_file: {original_path.name}
@@ -71,7 +96,7 @@ Read /Company_Handbook.md for tone and identity rules.
 Save the approval request to /Pending_Approval/ and wait for human approval.
 """
 
-    return action_filename, content
+    return action_filename, content, is_finance
 
 
 # ---------------------------------------------------------------------------
@@ -106,7 +131,7 @@ class DropHandler(FileSystemEventHandler):
             return
 
         try:
-            action_filename, content = _build_action_file(src)
+            action_filename, content, is_finance = _build_action_file(src)
 
             # Write action file
             action_path = NEEDS_ACTION / action_filename
@@ -120,7 +145,10 @@ class DropHandler(FileSystemEventHandler):
                 dest = DONE_ORIGINALS / f"{src.stem}_{ts}{src.suffix}"
             shutil.move(str(src), str(dest))
 
-            log.info("Created action file: %s", action_filename)
+            if is_finance:
+                log.info("[FileWatcher] Finance file detected: %s → FINANCE action created", src.name)
+            else:
+                log.info("Created action file: %s", action_filename)
 
         except Exception:
             log.exception("Error processing dropped file: %s", src.name)

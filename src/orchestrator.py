@@ -10,6 +10,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import time
 import webbrowser
 from datetime import datetime, timezone
@@ -201,6 +202,26 @@ def _handle_linkedin_post(content: str) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Gmail send helper
+# ---------------------------------------------------------------------------
+
+def _handle_send_gmail(src: Path) -> None:
+    """Send an approved email reply by invoking send_gmail.py."""
+    result = subprocess.run(
+        [sys.executable, str(Path("src/actions/send_gmail.py")), str(src)],
+        capture_output=True,
+        text=True,
+    )
+    output = result.stdout.strip()
+    if result.returncode == 0:
+        log.info("%s", output)
+    else:
+        error_detail = result.stderr.strip() or output
+        log.error("[GmailSend] FAILED: %s", error_detail)
+        raise RuntimeError(f"send_gmail.py failed: {error_detail}")
+
+
+# ---------------------------------------------------------------------------
 # Log file helper
 # ---------------------------------------------------------------------------
 
@@ -367,8 +388,19 @@ class ApprovalHandler(FileSystemEventHandler):
                 else:
                     log.info("Executing: %s — %s", action, topic)
                     _handle_linkedin_post(content)
+            elif action == "send_gmail":
+                to_raw = meta.get("to") or meta.get("from", "(unknown)")
+                if DRY_RUN:
+                    log.info(
+                        "[DRY RUN] Would send email to %s — subject: %s",
+                        to_raw,
+                        meta.get("subject", "?"),
+                    )
+                else:
+                    log.info("Executing: %s — %s", action, topic)
+                    _handle_send_gmail(src)
             else:
-                # send_gmail, send_whatsapp, etc. — MCP servers will be added later
+                # send_whatsapp, etc. — handlers added as implemented
                 if DRY_RUN:
                     log.info("[DRY RUN] Would execute: %s — %s", action, topic)
                 else:

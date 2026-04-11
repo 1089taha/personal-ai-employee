@@ -51,5 +51,41 @@ module.exports = {
       autorestart: false,
       watch: false,
     },
+    // Morning briefing — runs once daily at 7:00 AM
+    {
+      name: "morning-briefing",
+      script: "src/morning_briefing.py",
+      interpreter: "D:\\ai-employee-project\\.venv\\Scripts\\python.exe",
+      cwd: "D:\\ai-employee-project",
+      cron_restart: "0 7 * * *",
+      autorestart: false,
+      watch: false,
+      log_file: "logs/morning_briefing.log",
+      time: true,
+    },
+    // Content calendar — runs every Sunday at 9:00 AM, plans the coming week
+    {
+      name: "content-calendar",
+      script: "src/content_calendar.py",
+      interpreter: "D:\\ai-employee-project\\.venv\\Scripts\\python.exe",
+      cwd: "D:\\ai-employee-project",
+      cron_restart: "0 9 * * 0",
+      autorestart: false,
+      watch: false,
+      log_file: "logs/content_calendar.log",
+      time: true,
+    },
+    // Weekly briefing — runs every Sunday at 10:00 AM, after content_calendar
+    {
+      name: "weekly-briefing",
+      script: "src/weekly_briefing.py",
+      interpreter: "D:\\ai-employee-project\\.venv\\Scripts\\python.exe",
+      cwd: "D:\\ai-employee-project",
+      cron_restart: "0 10 * * 0",
+      autorestart: false,
+      watch: false,
+      log_file: "logs/weekly_briefing.log",
+      time: true,
+    },
   ],
 };

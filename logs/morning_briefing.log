@@ -1,0 +1,45 @@
+2026-03-08T16:28:27: 2026-03-08 16:28:27  [INFO]  [MorningBriefing] Generating daily briefing...
+2026-03-08T16:28:27: 2026-03-08 16:28:27  [INFO]  Project dir : D:\ai-employee-project
+2026-03-08T16:28:27: 2026-03-08 16:28:27  [INFO]  Vault path  : D:\obsidian_vault
+2026-03-08T16:28:27: 2026-03-08 16:28:27  [INFO]  Claude executable : C:\Users\tahaa\AppData\Roaming\npm\claude.CMD
+2026-03-08T16:28:28: 2026-03-08 16:28:28  [INFO]  Claude Code produced no stdout output
+2026-03-08T16:28:28: 2026-03-08 16:28:28  [ERROR]  [MorningBriefing] ERROR � Claude Code exited with code 1
+2026-03-08T16:28:28: stderr: Error: Claude Code cannot be launched inside another Claude Code session.
+2026-03-08T16:28:28: Nested sessions share runtime resources and will crash all active sessions.
+2026-03-08T16:28:28: To bypass this check, unset the CLAUDECODE environment variable.
+2026-03-09T20:05:41: 2026-03-09 20:05:41  [INFO]  [MorningBriefing] Generating daily briefing...
+2026-03-09T20:05:41: 2026-03-09 20:05:41  [INFO]  Project dir : D:\ai-employee-project
+2026-03-09T20:05:41: 2026-03-09 20:05:41  [INFO]  Vault path  : D:\obsidian_vault
+2026-03-09T20:05:41: 2026-03-09 20:05:41  [INFO]  Claude executable : C:\Users\tahaa\AppData\Roaming\npm\claude.CMD
+2026-03-09T20:05:50: 2026-03-09 20:05:50  [INFO]  Claude Code produced no stdout output
+2026-03-09T20:05:50: 2026-03-09 20:05:50  [ERROR]  [MorningBriefing] ERROR � Claude Code exited with code 1
+2026-03-09T20:05:50: stderr: Error: Claude Code cannot be launched inside another Claude Code session.
+2026-03-09T20:05:50: Nested sessions share runtime resources and will crash all active sessions.
+2026-03-09T20:05:50: To bypass this check, unset the CLAUDECODE environment variable.
+2026-03-10T13:38:13: 2026-03-10 13:38:13  [INFO]  [MorningBriefing] Generating daily briefing...
+2026-03-10T13:38:13: 2026-03-10 13:38:13  [INFO]  Project dir : D:\ai-employee-project
+2026-03-10T13:38:13: 2026-03-10 13:38:13  [INFO]  Vault path  : D:\obsidian_vault
+2026-03-10T13:38:13: 2026-03-10 13:38:13  [INFO]  Claude executable : C:\Users\tahaa\AppData\Roaming\npm\claude.CMD
+2026-03-10T13:38:17: 2026-03-10 13:38:17  [INFO]  Claude Code produced no stdout output
+2026-03-10T13:38:17: 2026-03-10 13:38:17  [ERROR]  [MorningBriefing] ERROR � Claude Code exited with code 1
+2026-03-10T13:38:17: stderr: Error: Claude Code cannot be launched inside another Claude Code session.
+2026-03-10T13:38:17: Nested sessions share runtime resources and will crash all active sessions.
+2026-03-10T13:38:17: To bypass this check, unset the CLAUDECODE environment variable.
+2026-03-11T20:55:59: 2026-03-11 20:55:59  [INFO]  [MorningBriefing] Generating daily briefing...
+2026-03-11T20:55:59: 2026-03-11 20:55:59  [INFO]  Project dir : D:\ai-employee-project
+2026-03-11T20:55:59: 2026-03-11 20:55:59  [INFO]  Vault path  : D:\obsidian_vault
+2026-03-11T20:55:59: 2026-03-11 20:55:59  [INFO]  Claude executable : C:\Users\tahaa\AppData\Roaming\npm\claude.CMD
+2026-03-11T20:56:02: 2026-03-11 20:56:02  [INFO]  Claude Code produced no stdout output
+2026-03-11T20:56:02: 2026-03-11 20:56:02  [ERROR]  [MorningBriefing] ERROR � Claude Code exited with code 1
+2026-03-11T20:56:02: stderr: Error: Claude Code cannot be launched inside another Claude Code session.
+2026-03-11T20:56:02: Nested sessions share runtime resources and will crash all active sessions.
+2026-03-11T20:56:02: To bypass this check, unset the CLAUDECODE environment variable.
+2026-03-11T21:17:42: 2026-03-11 21:17:42  [INFO]  [MorningBriefing] Generating daily briefing...
+2026-03-11T21:17:42: 2026-03-11 21:17:42  [INFO]  Project dir : D:\ai-employee-project
+2026-03-11T21:17:42: 2026-03-11 21:17:42  [INFO]  Vault path  : D:\obsidian_vault
+2026-03-11T21:17:42: 2026-03-11 21:17:42  [INFO]  Claude executable : C:\Users\tahaa\AppData\Roaming\npm\claude.CMD
+2026-03-11T21:17:43: 2026-03-11 21:17:43  [INFO]  Claude Code produced no stdout output
+2026-03-11T21:17:43: 2026-03-11 21:17:43  [ERROR]  [MorningBriefing] ERROR � Claude Code exited with code 1
+2026-03-11T21:17:43: stderr: Error: Claude Code cannot be launched inside another Claude Code session.
+2026-03-11T21:17:43: Nested sessions share runtime resources and will crash all active sessions.
+2026-03-11T21:17:43: To bypass this check, unset the CLAUDECODE environment variable.

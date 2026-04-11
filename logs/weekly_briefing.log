@@ -1,0 +1,9 @@
+2026-03-14T03:03:36: 2026-03-14 03:03:36  [INFO]  [WeeklyBriefing] Generating weekly creator briefing...
+2026-03-14T03:03:36: 2026-03-14 03:03:36  [INFO]  Project dir : D:\ai-employee-project
+2026-03-14T03:03:36: 2026-03-14 03:03:36  [INFO]  Vault path  : D:\obsidian_vault
+2026-03-14T03:03:36: 2026-03-14 03:03:36  [INFO]  Claude executable : C:\Users\tahaa\AppData\Roaming\npm\claude.CMD
+2026-03-14T03:03:38: 2026-03-14 03:03:38  [INFO]  Claude Code produced no stdout output
+2026-03-14T03:03:38: 2026-03-14 03:03:38  [ERROR]  [WeeklyBriefing] ERROR � Claude Code exited with code 1
+2026-03-14T03:03:38: stderr: Error: Claude Code cannot be launched inside another Claude Code session.
+2026-03-14T03:03:38: Nested sessions share runtime resources and will crash all active sessions.
+2026-03-14T03:03:38: To bypass this check, unset the CLAUDECODE environment variable.

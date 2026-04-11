@@ -177,6 +177,7 @@ Assign a priority to every task in `/Needs_Action/` using these rules:
 | `email` | normal | Subject or body contains: "urgent", "ASAP", "deadline", "today", "final notice", "immediately" |
 | `whatsapp` | normal | Message contains: time-sensitive question, deadline, or sender's tone suggests urgency |
 | `tech_news` | normal | — (news is never urgent; it can wait) |
+| `finance_drop` | normal | — (process same session as other files; never urgent) |
 | `thought_drop` | low | — (Taha's own notes; he knows when he dropped them) |
 
 When priority is ambiguous, **err toward urgent** rather than normal. Missing an urgent task is worse than over-processing a normal one.
@@ -197,6 +198,7 @@ Assign the correct skill to each task:
 | `tech_news` | `draft_linkedin_post` |
 | `email` | `classify_message` |
 | `whatsapp` | `classify_message` |
+| `finance_drop` | `analyze_finances` |
 | unknown type | Do not process — flag as error in Alerts section |
 
 If a file has no YAML front-matter at all, attempt to infer the type from the filename. If the type still cannot be determined, move the file to `/Plans/` with a `UNCLASSIFIED_` prefix and log the error. Never delete or ignore an unclassified file.
@@ -235,15 +237,21 @@ On failure, update the task row to:
 
 **3.4 Error handling — never stop the loop**
 
-If a skill fails for any reason (unreadable file, missing field, Claude cannot determine the right action):
+If a skill fails for any reason (unreadable file, missing field, Claude cannot determine the right action), **do not silently skip the task**. Instead:
 
-1. Record the error in the Plan file's Execution Log with enough detail to debug:
-   ```
-   [timestamp] ERROR processing [filename]: [what went wrong]. File left in /Needs_Action/.
-   ```
-2. Leave the failed file in `/Needs_Action/` — do NOT move it to `/Plans/`.
+1. **Invoke the `ralph_wiggum_loop` skill** with the failed task details:
+   - `action_file`: the file that was being processed
+   - `skill_name`: the skill that failed
+   - `failure_reason`: what went wrong
+   - `attempt_number`: 1 (first retry)
+
+   The `ralph_wiggum_loop` skill will retry the task up to 3 times. If it succeeds on a retry, execution continues normally. If all 3 retries fail, it creates an `ERROR_` report file in `/Needs_Action/` and moves the original to `/Rejected/` — the Plan file will reflect the permanent failure.
+
+2. Record the outcome in the Plan file's Execution Log:
+   - On retry success: `[timestamp] RECOVERED: [filename] succeeded on retry [N] via ralph_wiggum_loop.`
+   - On permanent failure: `[timestamp] PERMANENT FAILURE: [filename] failed after 3 retries. Error report created. See retry_log.md.`
 3. Continue to the next task. One failure must never block all other work.
-4. After all tasks are processed, the error will appear in the Plan file's summary. Taha will see it on Dashboard.
+4. After all tasks are processed, any permanent failures will appear in the Plan file's summary and in Dashboard Alerts. Taha will see them.
 
 **3.5 One task at a time**
 
@@ -370,8 +378,9 @@ Verify at each phase before proceeding:
 - [ ] Skill spec was re-read from file before executing (not from memory)
 - [ ] Each task was processed completely before moving to the next
 - [ ] Plan file was updated after every task (success or failure)
-- [ ] Failed tasks remain in /Needs_Action/ (not moved or deleted)
-- [ ] No task was silently skipped — every file has a status in the Plan
+- [ ] Failed tasks triggered `ralph_wiggum_loop` — no task was silently skipped
+- [ ] Permanently failed tasks are in /Rejected/ with FAILED_ prefix (not left in /Needs_Action/)
+- [ ] Every file has a status in the Plan — success, retry-success, or permanent-failure
 
 **Stale Approval Phase:**
 - [ ] All expired approvals have the ⚠️ EXPIRED banner added
